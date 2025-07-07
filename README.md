@@ -1,100 +1,120 @@
 # Brain-Tumor-Detection
 A Python-based brain tumor detection application, leveraging computer vision and image processing techniques. Built using OpenCV for image manipulation, Tkinter for the graphical user interface, NumPy for numerical computations, and PIL (Python Imaging Library) for image handling, this project aims to detect and analyze brain tumors from MRI scans.
-
-unit Unit1;
+unit CalculatorApp;
 
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Grids, StdCtrls;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
+  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
 
 type
-  TForm1 = class(TForm)
-    StringGrid1: TStringGrid;
-    Button1: TButton;
-    procedure FormCreate(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
+  TCalculator = class(TForm)
+    CalcDisplay: TLabel;
+    AddSign, MinusSign, MultiplySign, DivideSign, EqualsSign: TButton;
+    One, Two, Three, Four, Five, Six, Seven, Eight, Nine: TButton;
+    ClearBtn, DeleteBtn, PlusMinusToggle: TButton;
+    Zero, Dot: TButton; // Add if not yet created
+
+    procedure NumberClick(Sender: TObject);
+    procedure OperatorClick(Sender: TObject);
+    procedure EqualsSignClick(Sender: TObject);
+    procedure ClearBtnClick(Sender: TObject);
+    procedure DeleteBtnClick(Sender: TObject);
+    procedure PlusMinusToggleClick(Sender: TObject);
+    procedure DotClick(Sender: TObject);
   private
+    operand1: Double;
+    currentOperator: string;
+    isNewInput: Boolean;
   public
   end;
 
 var
-  Form1: TForm1;
+  Calculator: TCalculator;
 
 implementation
 
 {$R *.dfm}
 
-// Load CSV data into the grid when form starts
-procedure TForm1.FormCreate(Sender: TObject);
-var
-  FileLines: TStringList;
-  i, j: Integer;
-  Parts: TArray<string>;
+procedure TCalculator.NumberClick(Sender: TObject);
 begin
-  // Set up grid columns and header row
-  StringGrid1.ColCount := 5;
-  StringGrid1.RowCount := 2; // Start with header + 1 empty row
-  StringGrid1.FixedRows := 1;
-
-  // Enable editing
-  StringGrid1.Options := StringGrid1.Options + [goEditing];
-
-  // Set header names
-  StringGrid1.Cells[0, 0] := 'SrNo';
-  StringGrid1.Cells[1, 0] := 'Name';
-  StringGrid1.Cells[2, 0] := 'Address';
-  StringGrid1.Cells[3, 0] := 'Age';
-  StringGrid1.Cells[4, 0] := 'Role';
-
-  // Load data if file exists
-  if FileExists('UserData.csv') then
+  if isNewInput then
   begin
-    FileLines := TStringList.Create;
-    try
-      FileLines.LoadFromFile('UserData.csv');
-      StringGrid1.RowCount := FileLines.Count + 1;
-
-      for i := 0 to FileLines.Count - 1 do
-      begin
-        Parts := FileLines[i].Split([',']);
-        for j := 0 to Length(Parts) - 1 do
-          StringGrid1.Cells[j, i + 1] := Parts[j]; // i+1 to skip header row
-      end;
-    finally
-      FileLines.Free;
-    end;
+    CalcDisplay.Caption := '';
+    isNewInput := False;
   end;
+
+  if CalcDisplay.Caption = '0' then
+    CalcDisplay.Caption := '';
+
+  CalcDisplay.Caption := CalcDisplay.Caption + (Sender as TButton).Caption;
 end;
 
-// Save grid data back to CSV when button is clicked
-procedure TForm1.Button1Click(Sender: TObject);
-var
-  FileLines: TStringList;
-  i, j: Integer;
-  Line: string;
+procedure TCalculator.OperatorClick(Sender: TObject);
 begin
-  FileLines := TStringList.Create;
-  try
-    for i := 1 to StringGrid1.RowCount - 1 do // Skip header row
-    begin
-      Line := '';
-      for j := 0 to StringGrid1.ColCount - 1 do
-      begin
-        Line := Line + StringGrid1.Cells[j, i];
-        if j < StringGrid1.ColCount - 1 then
-          Line := Line + ',';
-      end;
-      if Trim(Line) <> '' then
-        FileLines.Add(Line);
-    end;
+  operand1 := StrToFloatDef(CalcDisplay.Caption, 0);
+  currentOperator := (Sender as TButton).Caption;
+  isNewInput := True;
+end;
 
-    FileLines.SaveToFile('UserData.csv');
-    ShowMessage('Data saved!');
-  finally
-    FileLines.Free;
-  end;
+procedure TCalculator.EqualsSignClick(Sender: TObject);
+var
+  operand2, result: Double;
+begin
+  operand2 := StrToFloatDef(CalcDisplay.Caption, 0);
+
+  if currentOperator = '+' then
+    result := operand1 + operand2
+  else if currentOperator = '-' then
+    result := operand1 - operand2
+  else if currentOperator = '×' then
+    result := operand1 * operand2
+  else if currentOperator = '÷' then
+  begin
+    if operand2 = 0 then
+    begin
+      CalcDisplay.Caption := 'Error';
+      Exit;
+    end;
+    result := operand1 / operand2;
+  end
+  else
+    result := operand2;
+
+  CalcDisplay.Caption := FloatToStr(result);
+  isNewInput := True;
+end;
+
+procedure TCalculator.ClearBtnClick(Sender: TObject);
+begin
+  CalcDisplay.Caption := '0';
+  operand1 := 0;
+  currentOperator := '';
+  isNewInput := True;
+end;
+
+procedure TCalculator.DeleteBtnClick(Sender: TObject);
+begin
+  if Length(CalcDisplay.Caption) > 1 then
+    CalcDisplay.Caption := Copy(CalcDisplay.Caption, 1, Length(CalcDisplay.Caption) - 1)
+  else
+    CalcDisplay.Caption := '0';
+end;
+
+procedure TCalculator.PlusMinusToggleClick(Sender: TObject);
+var
+  value: Double;
+begin
+  value := StrToFloatDef(CalcDisplay.Caption, 0);
+  value := -value;
+  CalcDisplay.Caption := FloatToStr(value);
+end;
+
+procedure TCalculator.DotClick(Sender: TObject);
+begin
+  if Pos('.', CalcDisplay.Caption) = 0 then
+    CalcDisplay.Caption := CalcDisplay.Caption + '.';
 end;
 
 end.
